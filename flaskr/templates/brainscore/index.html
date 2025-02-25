@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<div class="flex-title">
+    <h1>{% block title %}Scoring{% endblock %}</h1>
+    <div>
+        <label id="done_label" for="done"></label>
+        <progress id="done" value="0" max="100"> </progress>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="brain-container">
+    <div class="brain-cell image-inspector">
+        <img class="brain" id="slice1" src="">
+    </div>
+    <div class="brain-cell image-inspector">
+        <img class="brain" id="slice2" src="">
+    </div>
+
+    <div class="brain-cell image-inspector">
+        <img class="brain" id="slice3" src="">
+    </div>
+</div>
+<div class="btn-container">
+    <!--<div class="draw-btn fake-button" onclick="fail()">FAIL</div>
+    <div class="draw-btn fake-button" onclick="keep()">KEEP</div>  -->
+    <div class="btn-group">
+        <span class="group-text">Strong Reject</span>
+        <div class="draw-btn fake-button" onclick="sendScore(5)">Corrupted</div>
+        <div class="draw-btn fake-button" onclick="sendScore(4)">Unusable</div>
+    </div>
+    <div class="btn-group">
+        <span class="group-text">Reject</span>
+        <div class="draw-btn fake-button" onclick="sendScore(3)">Strong</div>
+        <div class="draw-btn fake-button" onclick="sendScore(2)">Noticeable</div>
+    </div>
+    <div class="btn-group">
+        <span class="group-text">Pass</span>
+        <div class="draw-btn fake-button" onclick="sendScore(1)">Barely Noticeable</div>
+        <div class="draw-btn fake-button" onclick="sendScore(0)">Clean</div>
+    </div>
+
+
+</div>
+
+<script>
+    let vol1Id = null;
+    let vol2Id = null;
+    // Function to load new slices without reloading the page
+    function loadSlices() {
+        fetch('{{url_for("brainscore.get_slices")}}')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to load slices');
+                }
+                return response.json();
+            })
+            .then(data => {
+                [...document.getElementsByClassName("brain-cell")].map(
+                    (el) =>
+                        [...el.getElementsByClassName("img-magnifier-glass")].map(div => el.removeChild(div))
+                )
+                document.getElementById('slice1').src = 'data:image/png;base64,' + data.slice1;
+                document.getElementById('slice2').src = 'data:image/png;base64,' + data.slice2;
+                document.getElementById('slice3').src = 'data:image/png;base64,' + data.slice3;
+
+                volId = data.vol_id
+
+                document.getElementById("done").value = data.done / data.to_do * 100
+                document.getElementById("done_label").innerHTML = data.done + "/" + data.to_do + " (" + data.kept + " kept)"
+                init_magnify()
+
+            })
+            .catch(error => {
+                alert(error.message);
+            });
+    };
+
+    function sendScore(score) {
+        fetch('{{url_for("brainscore.score")}}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ vol_id: volId, score: score })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.error); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                loadSlices();  // Load new slices after voting
+            })
+            .catch(error => {
+                alert('Error submitting vote: ' + error.message);
+            });
+    };
+
+
+    // Load slices when the page loads
+    document.addEventListener('DOMContentLoaded', loadSlices);
+
+    function magnify(imgID, zoom) {
+        var img, glass, w, h, bw;
+        img = document.getElementById(imgID);
+
+        /* Create magnifier glass: */
+        glass = document.createElement("DIV");
+        glass.setAttribute("class", "img-magnifier-glass");
+
+        /* Insert magnifier glass: */
+        img.parentElement.insertBefore(glass, img);
+
+        /* Set background properties for the magnifier glass: */
+        glass.style.backgroundImage = "url('" + img.src + "')";
+        glass.style.backgroundRepeat = "no-repeat";
+        glass.style.backgroundSize = (img.width * zoom) + "px " + (img.height * zoom) + "px";
+        bw = 3;
+        w = glass.offsetWidth / 2;
+        h = glass.offsetHeight / 2;
+
+        img.addEventListener("mouseover", displayMagnifier);
+        function displayMagnifier(e) {
+            glass.style.display = "block";
+            w = glass.offsetWidth / 2;
+            h = glass.offsetHeight / 2;
+        }
+
+        glass.addEventListener("mouseleave", hideMagnifier);
+        function hideMagnifier(e) {
+            glass.style.display = "none";
+        }
+
+        /* Execute a function when someone moves the magnifier glass over the image: */
+        glass.addEventListener("mousemove", moveMagnifier);
+        img.addEventListener("mousemove", moveMagnifier);
+
+        /*and also for touch screens:*/
+        glass.addEventListener("touchmove", moveMagnifier);
+        img.addEventListener("touchmove", moveMagnifier);
+        function moveMagnifier(e) {
+            var pos, x, y;
+            /* Prevent any other actions that may occur when moving over the image */
+            e.preventDefault();
+            /* Get the cursor's x and y positions: */
+            pos = getCursorPos(e);
+            x = pos.x;
+            y = pos.y;
+            /* Prevent the magnifier glass from being positioned outside the image: */
+            if (x > img.width - (w / zoom)) { x = img.width - (w / zoom); }
+            if (x < w / zoom) { x = w / zoom; }
+            if (y > img.height - (h / zoom)) { y = img.height - (h / zoom); }
+            if (y < h / zoom) { y = h / zoom; }
+            /* Set the position of the magnifier glass: */
+            glass.style.left = (x - w) + "px";
+            glass.style.top = (y - h) + "px";
+            /* Display what the magnifier glass "sees": */
+            glass.style.backgroundPosition = "-" + ((x * zoom) - w + bw) + "px -" + ((y * zoom) - h + bw) + "px";
+        }
+
+        function getCursorPos(e) {
+            var a, x = 0, y = 0;
+            e = e || window.event;
+            /* Get the x and y positions of the image: */
+            a = img.getBoundingClientRect();
+            /* Calculate the cursor's x and y coordinates, relative to the image: */
+            x = e.pageX - a.left;
+            y = e.pageY - a.top;
+            /* Consider any page scrolling: */
+            x = x - window.pageXOffset;
+            y = y - window.pageYOffset;
+            return { x: x, y: y };
+        }
+    }
+
+    function init_magnify() {
+        magnify("slice1", 1.5);
+        magnify("slice2", 1.5);
+        magnify("slice3", 1.5);
+    }
+</script>
+{% endblock %}
