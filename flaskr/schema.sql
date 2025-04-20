@@ -16,7 +16,8 @@ CREATE TABLE
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         sub_id TEXT NOT NULL,
         ses_id TEXT NOT NULL,
-        volume_path TEXT NOT NULL
+        volume_path TEXT NOT NULL,
+        dataset TEXT NOT NULL
     );
 
 CREATE TABLE
@@ -25,6 +26,8 @@ CREATE TABLE
         judge_code TEXT NOT NULL,
         vol_id INTEGER NOT NULL,
         score INTEGER NOT NULL,
+        lines BOOLEAN DEFAULT False,
+        blur BOOLEAN DEFAULT False,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (vol_id) REFERENCES volume (id),
         FOREIGN KEY (judge_code) REFERENCES user (user_code)

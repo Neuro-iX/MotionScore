@@ -14,7 +14,7 @@ def orient(vol: np.ndarray) -> np.ndarray:
     return nib.orientations.apply_orientation(vol, ornt)
 
 
-def crop_image(image, threshold=50):
+def crop_image(image, threshold=-1):
     if not isinstance(image, np.ndarray) or image.ndim != 2:
         raise ValueError("Input must be a 2D numpy array.")
 

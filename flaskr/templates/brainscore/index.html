@@ -7,6 +7,8 @@
         <label id="done_label" for="done"></label>
         <progress id="done" value="0" max="100"> </progress>
     </div>
+    <div class="draw-btn fake-button red-btn" onclick="back()">BACK</div>
+
 </div>
 {% endblock %}
 
@@ -31,10 +33,23 @@
         <div class="draw-btn fake-button" onclick="sendScore(5)">Corrupted</div>
         <div class="draw-btn fake-button" onclick="sendScore(4)">Unusable</div>
     </div>
-    <div class="btn-group">
+    <div class="btn-group" style="flex-direction: column;">
         <span class="group-text">Reject</span>
-        <div class="draw-btn fake-button" onclick="sendScore(3)">Strong</div>
-        <div class="draw-btn fake-button" onclick="sendScore(2)">Noticeable</div>
+        <div
+            style="display:flex; flex-direction: row; justify-content: space-evenly; margin-top: 5px; margin-bottom: -5px;">
+            <div>
+                <input type="checkbox" name="blur" id="blur">
+                <label for="blur">Blur</label>
+            </div>
+            <div>
+                <input type="checkbox" name="lines" id="lines">
+                <label for="lines">Lines</label>
+            </div>
+        </div>
+        <div style="display:flex; flex-direction: row;">
+            <div class="draw-btn fake-button" onclick="sendScore(3)">Strong</div>
+            <div class="draw-btn fake-button" onclick="sendScore(2)">Noticeable</div>
+        </div>
     </div>
     <div class="btn-group">
         <span class="group-text">Pass</span>
@@ -78,13 +93,48 @@
             });
     };
 
+    function back() {
+        fetch('{{url_for("brainscore.back")}}')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to load slices');
+                }
+                return response.json();
+            })
+            .then(data => {
+                [...document.getElementsByClassName("brain-cell")].map(
+                    (el) =>
+                        [...el.getElementsByClassName("img-magnifier-glass")].map(div => el.removeChild(div))
+                )
+                document.getElementById('slice1').src = 'data:image/png;base64,' + data.slice1;
+                document.getElementById('slice2').src = 'data:image/png;base64,' + data.slice2;
+                document.getElementById('slice3').src = 'data:image/png;base64,' + data.slice3;
+
+                volId = data.vol_id
+
+                document.getElementById("done").value = data.done / data.to_do * 100
+                document.getElementById("done_label").innerHTML = data.done + "/" + data.to_do + " (" + data.kept + " kept)"
+                init_magnify()
+
+            })
+            .catch(error => {
+                alert(error.message);
+            });
+    };
+
     function sendScore(score) {
+        let blur = false
+        let lines = false
+        if (score == 2 || score == 3) {
+            blur = document.getElementById("blur").checked
+            lines = document.getElementById("lines").checked
+        }
         fetch('{{url_for("brainscore.score")}}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ vol_id: volId, score: score })
+            body: JSON.stringify({ vol_id: volId, score: score, blur: blur, lines: lines })
         })
             .then(response => {
                 if (!response.ok) {
@@ -93,6 +143,8 @@
                 return response.json();
             })
             .then(data => {
+                document.getElementById("blur").checked = false
+                document.getElementById("lines").checked = false
                 loadSlices();  // Load new slices after voting
             })
             .catch(error => {

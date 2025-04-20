@@ -72,10 +72,33 @@ def get_next_volume_to_review(user_code: str) -> dict[str, str]:
             FROM volume V
             LEFT JOIN review R ON V.id = R.vol_id AND R.judge_code = '{user_code}'
             WHERE R.vol_id IS NULL
+            ORDER BY RANDOM()
             """
     ).fetchall()
 
     return req[0]
+
+
+def get_last_reviewed_volume(user_code: str) -> dict[str, str]:
+    db = get_db()
+    req: list[sqlite3.Row] = db.execute(
+        f"""SELECT V.*, R.*
+            FROM volume V
+            LEFT JOIN review R ON V.id = R.vol_id AND R.judge_code = '{user_code}'
+            WHERE R.vol_id IS NOT NULL
+            """
+    ).fetchall()
+
+    return req[-1]
+
+
+def remove_review(volume_id: int, user_code: str):
+    db = get_db()
+    cur = db.cursor()
+    cur.execute(
+        "DELETE FROM review WHERE vol_id=? AND judge_code = ?", (volume_id, user_code)
+    )
+    db.commit()
 
 
 def get_review_status(user_code: str) -> dict[str, str]:
@@ -146,7 +169,8 @@ def populate_volume(dataset_path: str) -> int:
         for vol in volumes:
             cur = db.cursor()
             cur.execute(
-                "INSERT INTO volume(sub_id,ses_id,volume_path) VALUES(?,?,?)", vol
+                "INSERT INTO volume(sub_id,ses_id,volume_path,dataset) VALUES(?,?,?,?)",
+                vol,
             )
         db.commit()
         return len(volumes)
@@ -155,21 +179,43 @@ def populate_volume(dataset_path: str) -> int:
 
 @click.command("populate-volumes")
 @click.option("--dataset_path", type=str)
-def populate_volume_command(dataset_path: str):
+@click.option(
+    "-m",
+    "--multiple",
+    help="Toggle when dataset_path is a parent folder that contain multiple dataset",
+    is_flag=True,
+    type=bool,
+)
+def populate_volume_command(dataset_path: str, multiple: bool):
     """Populate volume table with dataset volumes"""
-    nb_volume = populate_volume(dataset_path)
-    click.echo(f"Inserted {nb_volume} volumes.")
+    if multiple:
+        for ds in os.listdir(dataset_path):
+            nb_volume = populate_volume(os.path.join(dataset_path, ds))
+            click.echo(f"Inserted {nb_volume} volumes.")
+    else:
+        nb_volume = populate_volume(dataset_path)
+        click.echo(f"Inserted {nb_volume} volumes.")
 
 
 def export_csv(output: str):
     db = get_db()
     reviews = db.execute(
-        """SELECT sub_id, ses_id, volume_path, judge_code, score 
+        """SELECT sub_id, ses_id, volume_path, judge_code, score, blur, lines, dataset
         FROM review R 
         LEFT JOIN volume V ON V.id = R.vol_id  """
     ).fetchall()
     pd.DataFrame.from_records(
-        reviews, columns=["sub_id", "ses_id", "volume_path", "judge_code", "score"]
+        reviews,
+        columns=[
+            "sub_id",
+            "ses_id",
+            "volume_path",
+            "judge_code",
+            "score",
+            "blur",
+            "lines",
+            "dataset",
+        ],
     ).to_csv(output)
 
 

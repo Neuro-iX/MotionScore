@@ -242,6 +242,10 @@ input[type=submit] {
     z-index: 1;
 }
 
+.red-btn {
+    background-color: #af423a;
+}
+
 hr.dotted {
     border-top: 3px dotted #bbb;
     width: 100%;
