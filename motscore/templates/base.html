@@ -1,12 +1,12 @@
 <!doctype html>
-<title>{% block title %}{% endblock %} - BrainScore</title>
+<title>{% block title %}{% endblock %} - MotionScore</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <nav>
-  <h1>BrainScore</h1>
+  <h1>MotionScore</h1>
   <ul>
     {% if g.user %}
     {% if not 'index' in request.endpoint %}
-    <li><a href="{{ url_for('brainscore.index') }}">Scoring</a>
+    <li><a href="{{ url_for('motionscore.index') }}">Scoring</a>
       {% endif %}
     <li><a href="{{ url_for('auth.logout') }}">Log Out</a>
       {% else %}

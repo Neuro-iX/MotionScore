@@ -1,9 +1,9 @@
+"""Module handling the authentification process."""
+
 import functools
 
-import click
 from flask import (
     Blueprint,
-    current_app,
     flash,
     g,
     redirect,
@@ -12,15 +12,15 @@ from flask import (
     session,
     url_for,
 )
-from werkzeug.security import check_password_hash, generate_password_hash
 
-from flaskr.db import get_db
+from motscore.db import get_db
 
 bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 
 @bp.before_app_request
 def load_logged_in_user():
+    """Check for logged user in session."""
     user_id = session.get("user_id")
 
     if user_id is None:
@@ -33,6 +33,7 @@ def load_logged_in_user():
 
 @bp.route("/login", methods=("GET", "POST"))
 def login():
+    """Define login route."""
     if request.method == "POST":
         user_code = request.form["user_code"]
         db = get_db()
@@ -58,13 +59,17 @@ def login():
 
 @bp.route("/logout")
 def logout():
+    """Clear session and redirect to base."""
     session.clear()
     return redirect(url_for("index"))
 
 
 def login_required(view):
+    """Guard routes to guarantee logged user."""
+
     @functools.wraps(view)
     def wrapped_view(**kwargs):
+        """Define decorator."""
         if g.user is None:
             return redirect(url_for("auth.login"))
 

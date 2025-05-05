@@ -65,7 +65,7 @@
     let vol2Id = null;
     // Function to load new slices without reloading the page
     function loadSlices() {
-        fetch('{{url_for("brainscore.get_slices")}}')
+        fetch('{{url_for("motionscore.get_slices")}}')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Failed to load slices');
@@ -85,7 +85,7 @@
 
                 document.getElementById("done").value = data.done / data.to_do * 100
                 document.getElementById("done_label").innerHTML = data.done + "/" + data.to_do + " (" + data.kept + " kept)"
-                init_magnify()
+                setTimeout(init_magnify, 20)
 
             })
             .catch(error => {
@@ -94,7 +94,7 @@
     };
 
     function back() {
-        fetch('{{url_for("brainscore.back")}}')
+        fetch('{{url_for("motionscore.back")}}')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Failed to load slices');
@@ -129,7 +129,7 @@
             blur = document.getElementById("blur").checked
             lines = document.getElementById("lines").checked
         }
-        fetch('{{url_for("brainscore.score")}}', {
+        fetch('{{url_for("motionscore.apply_score")}}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -230,9 +230,11 @@
     }
 
     function init_magnify() {
+        console.log("initialiwed")
         magnify("slice1", 1.5);
         magnify("slice2", 1.5);
         magnify("slice3", 1.5);
     }
+
 </script>
 {% endblock %}

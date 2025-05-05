@@ -1,7 +1,7 @@
 
 [project]
-name = "brainscore"
-version = "2024.0.0"
+name = "MotionScore"
+version = "0.0.2"
 dependencies = [
   "flask>=3.0.3",
   "numpy>=2.2.1",
@@ -22,7 +22,7 @@ authors = [
 maintainers = [
   {name = "Bricout Charles", email = "bricout.charles@outlook.com"}
 ]
-description = "Lovely Spam! Wonderful Spam!"
+description = "A web based tool to grade and caracterize MRI T1w motion easily"
 readme = "README.md"
 
 [build-system]
@@ -31,5 +31,52 @@ build-backend = "hatchling.build"
 
 
 [tool.pytest.ini_options]
-pythonpath = ["."]
+pythonpath = "."
+addopts = [
+    "--import-mode=importlib",
+]
 
+[tool.coverage.run]
+omit = [".conda/*"]
+
+[tool.pylint.main]
+init-hook = "import sys; sys.path.append('.')"
+ignore-paths = [".conda","tests/data"]
+
+[tool.ruff]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+    ".conda",
+    "data"
+]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "B", "SIM","I"]
+
+[tool.mypy]
+exclude = [".conda"]
